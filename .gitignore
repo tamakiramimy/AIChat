@@ -1,5 +1,6 @@
 .DS_Store
 artifacts/
+Temp-AIChat/
 
 DotnetApi/.vs/
 DotnetApi/bin/
