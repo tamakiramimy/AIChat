@@ -2,6 +2,10 @@
 
 面向移动端的 AI 聊天应用。前端使用 Vue 3 + TypeScript，后端使用 ASP.NET Core 10、SQLite 和 OpenAI 兼容模型接口，支持流式回复、会话历史、图片/文档附件与语音输入输出。
 
+## 运行效果
+
+![AIChat 桌面端运行效果](docs/images/chat-desktop.png)
+
 ## 目录
 
 - `DotnetApi/`：ASP.NET Core API、SQLite 迁移和文件处理服务。
