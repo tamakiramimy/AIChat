@@ -1,0 +1,135 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  frontend:
+    name: Build frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Vue3/package-lock.json
+      - run: npm ci
+        working-directory: Vue3
+      - run: npm run build
+        working-directory: Vue3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: Vue3/dist
+          if-no-files-found: error
+          retention-days: 7
+
+  package:
+    name: Package ${{ matrix.rid }}
+    needs: frontend
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    strategy:
+      fail-fast: false
+      matrix:
+        rid:
+          - win-x64
+          - win-arm64
+          - osx-x64
+          - osx-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/download-artifact@v5
+        with:
+          name: frontend-dist
+          path: web-dist
+      - name: Publish self-contained API
+        run: >
+          dotnet publish DotnetApi/AIChat.csproj
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          --self-contained true
+          --property:PublishSingleFile=false
+          --property:PublishTrimmed=false
+          --output "$RUNNER_TEMP/api-${{ matrix.rid }}"
+      - name: Create release archive
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          RID: ${{ matrix.rid }}
+        run: |
+          package_name="AIChat-${RELEASE_TAG}-${RID}"
+          package_dir="release/${package_name}"
+
+          mkdir -p "${package_dir}/api" "${package_dir}/web" "${package_dir}/docs"
+          cp -a "$RUNNER_TEMP/api-${RID}/." "${package_dir}/api/"
+          cp -a web-dist/. "${package_dir}/web/"
+          cp README.md "${package_dir}/"
+          cp docs/*.md "${package_dir}/docs/"
+          cp DotnetApi/appsettings.example.json "${package_dir}/api/"
+
+          cat > "${package_dir}/RELEASE.txt" <<EOF
+          Version: ${RELEASE_TAG}
+          Runtime identifier: ${RID}
+          API: api/
+          Frontend static files: web/
+          Configuration template: api/appsettings.example.json
+          Deployment guide: docs/DEPLOYMENT.md
+          EOF
+
+          (cd release && zip -r "${package_name}.zip" "${package_name}")
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.rid }}
+          path: release/*.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Create GitHub Release
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          shopt -s nullglob
+          assets=(release-assets/*.zip)
+
+          if [ "${#assets[@]}" -ne 4 ]; then
+            echo "Expected four platform archives, found ${#assets[@]}."
+            exit 1
+          fi
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+          else
+            gh release create "$RELEASE_TAG" "${assets[@]}" \
+              --verify-tag \
+              --title "AIChat $RELEASE_TAG" \
+              --generate-notes \
+              --latest
+          fi

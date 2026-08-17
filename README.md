@@ -60,6 +60,24 @@ npm --prefix Vue3 run build
 
 GitHub Actions 会在 `main` 的推送和拉取请求上执行相同的前后端构建，并发布后端产物以验证部署链。
 
+## 发布版本
+
+推送符合 `v*` 格式的语义版本 tag 会触发 `Release` 工作流，自动构建前端并创建对应的 [GitHub Release](../../releases)。首个版本使用 `v0.1.0`：
+
+```bash
+git tag -a v0.1.0 -m "AIChat v0.1.0"
+git push origin v0.1.0
+```
+
+每个 Release 会上传四个自包含 .NET 10 发布包：
+
+- `AIChat-v<version>-win-x64.zip`
+- `AIChat-v<version>-win-arm64.zip`
+- `AIChat-v<version>-osx-x64.zip`
+- `AIChat-v<version>-osx-arm64.zip`
+
+每个 ZIP 都包含 `api/`、生产前端 `web/`、`api/appsettings.example.json` 以及部署和使用文档。解压后按 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 配置模型密钥和反向代理。
+
 ## 安全边界
 
 - 不提交 API 密钥、`appsettings*.json` 本地文件、SQLite 数据库、前端环境文件或构建产物。
