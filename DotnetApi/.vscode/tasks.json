@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run .NET API",
+			"type": "shell",
+			"command": "dotnet run --project AIChat.csproj",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

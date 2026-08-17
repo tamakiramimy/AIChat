@@ -1,0 +1,26 @@
+{
+  "name": "ai-chat-h5",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.1.0",
+    "browser-image-compression": "^2.0.2",
+    "dompurify": "^3.4.13",
+    "emoji-picker-element": "^1.29.0",
+    "highlight.js": "^11.11.1",
+    "marked": "^17.0.1",
+    "vue": "^3.4.15"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.3",
+    "typescript": "5.3.3",
+    "vite": "^5.0.11",
+    "vue-tsc": "^1.8.27"
+  }
+}

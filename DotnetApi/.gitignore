@@ -1,0 +1,14 @@
+.env
+.env.local
+.env.*.local
+.vs
+bin
+obj
+appsettings.json
+appsettings.Development.json
+appsettings.*.local.json
+*.db-wal
+*.db-shm
+Data/*.db
+Data/*.db-shm
+Data/*.db-wal
